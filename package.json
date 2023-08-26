@@ -49,10 +49,12 @@
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1",
     "workbox-webpack-plugin": "^7.0.0",
-    "ws": "^8.13.0"
+    "ws": "^8.13.0",
+    "yup": "^1.2.0"
   },
   "keywords": [],
   "dependencies": {
-    "bootstrap": "^5.2.0"
+    "bootstrap": "^5.2.0",
+    "on-change": "^4.0.2"
   }
 }
