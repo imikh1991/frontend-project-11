@@ -1,6 +1,7 @@
 // @ts-check
 
-import Example from './Example';
+// eslint-disable-next-line import/extensions
+import Example from './Example.js';
 
 export default () => {
   const element = document.getElementById('point');
