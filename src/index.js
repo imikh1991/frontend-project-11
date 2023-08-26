@@ -1,8 +1,8 @@
-import bootstrap from 'bootstrap';
+// import bootstrap from 'bootstrap';
 
 // @ts-check
 
-import init from './init.js';
+import init from './init';
 import './style.css';
 
 init();
