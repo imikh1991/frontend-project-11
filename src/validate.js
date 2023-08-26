@@ -12,7 +12,7 @@ export default () => {
   const inputField = document.querySelector('#url-input');
   const feedbackElement = document.querySelector('.feedback');
 
-  const watchedState = onChange(initialState, (path, value) => {
+  const watchedState = onChange(initialState, () => {
     if (watchedState.isValid) {
       feedbackElement.textContent = 'RSS успешно загружен';
       feedbackElement.classList.replace('text-danger', 'text-success');
