@@ -1,8 +1,13 @@
-
-
-# Вычислитель отличий
+# RSS-reader
 #RSS-reader-hexlet / - JavaScript + Webpack - Third project for Hexlet.io 
 Проект "RSS"
+
+## Tech stack 
+
+- Java Script
+- i18next
+- Webpack 
+- Yup Validate 
 
 ### Hexlet tests and linter status:
 
@@ -12,4 +17,4 @@
 
 [![Test Coverage](https://api.codeclimate.com/v1/badges/19fc3b94930cf16c1bec/test_coverage)](https://codeclimate.com/github/imikh1991/frontend-project-11/test_coverage)
 
-![Github Actions](https://github.com/imikh1991/frontend-project-46/workflows/nodejs/badge.svg)
+![Github Actions](https://github.com/imikh1991/frontend-project-11/workflows/nodejs/badge.svg)
