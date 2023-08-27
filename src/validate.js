@@ -1,27 +1,17 @@
 import * as yup from 'yup';
 import onChange from 'on-change';
-import i18next from 'i18next';
+import i18next from './i18n.js';
+import getParsedData from './getParsed.js';
 
 export default () => {
   const state = {
     url: [],
-    isValid: true,
+    isValid: null,
     error: '',
+    status: 'none',
+    feeds: [],
+    posts: [],
   };
-
-  i18next.init({
-    lng: 'ru',
-    debug: true,
-    resources: {
-      ru: {
-        translation: {
-          success: 'RSS успешно загружен',
-          invalidUrl: 'Ссылка должна быть валидным URL',
-          existingUrl: 'RSS уже существует',
-        },
-      },
-    },
-  });
 
   const form = document.querySelector('.rss-form');
   const inputField = document.querySelector('#url-input');
@@ -29,7 +19,9 @@ export default () => {
 
   const watchedState = onChange(state, (path, value) => {
     console.log(path);
-    console.log(value);
+    console.log('value>>>>', value);
+    console.log(getParsedData(value[0]));
+
     if (watchedState.isValid) {
       feedbackElement.textContent = i18next.t('success');
       feedbackElement.classList.replace('text-danger', 'text-success');
@@ -43,9 +35,7 @@ export default () => {
     }
   });
 
-  const schema = yup.string().required()
-    .url('invalidUrl')
-    .notOneOf([watchedState.url], 'existingUrl');
+  const schema = yup.string().required().url('invalidUrl').notOneOf(watchedState.url, 'existingUrl');
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -53,9 +43,14 @@ export default () => {
     const url = formData.get('url');
     try {
       await schema.validate(url);
-      watchedState.isValid = true;
-      watchedState.url.push(url);
-      watchedState.error = '';
+      if (watchedState.url.includes(url)) {
+        watchedState.isValid = false;
+        watchedState.error = i18next.t('existingUrl');
+      } else {
+        watchedState.isValid = true;
+        watchedState.url.push(url);
+        watchedState.error = '';
+      }
     } catch (error) {
       watchedState.isValid = false;
       watchedState.error = error.message;
