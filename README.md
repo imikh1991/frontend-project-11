@@ -5,6 +5,7 @@
 ## Tech stack 
 
 - Java Script
+- Axios
 - i18next
 - Webpack 
 - Yup Validate 
@@ -18,3 +19,5 @@
 [![Test Coverage](https://api.codeclimate.com/v1/badges/19fc3b94930cf16c1bec/test_coverage)](https://codeclimate.com/github/imikh1991/frontend-project-11/test_coverage)
 
 ![Github Actions](https://github.com/imikh1991/frontend-project-11/workflows/nodejs/badge.svg)
+
+![Preview ](https://frontend-project-rss-git-main-imikh1991.vercel.app/)
