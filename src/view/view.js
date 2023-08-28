@@ -2,8 +2,11 @@
 import * as yup from 'yup';
 import onChange from 'on-change';
 import i18next from '../i18n.js';
-import fetchXMLContent from '../utils/getContent.js';
+import fetchXMLContent from '../utils/fetch.js';
 // import parser from './parser.js';
+// пробуем завести
+// import getFeedAndPostsParsed from '../utils/parser.js';
+// import updatePosts from '../utils/updater.js';
 
 const handleValid = (elements, validationState) => {
   if (validationState) {
@@ -127,8 +130,8 @@ export default () => {
 
   elements.inputForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const data = new FormData(event.target);
-    const url = data.get('url');
+    const formData = new FormData(event.target);
+    const url = formData.get('url');
     // валидируем
     try {
       await schema.validate(url);
@@ -145,16 +148,19 @@ export default () => {
       }
 
       const xmlContent = fetchXMLContent(url);
+      console.log('xmlContent>>>>>', xmlContent);
+      // updatePosts
       xmlContent
-        .then((content) => {
+        .then(({ data }) => {
           const response = new DOMParser();
-          const xmlDocument = response.parseFromString(content, 'application/xml');
+          const xmlDocument = response.parseFromString(data.contents, 'application/xml');
           if (!xmlDocument.querySelector('channel')) {
             watchedState.isValid = false;
             watchedState.error = 'notValidRSS';
           }
           // # TO DO REFACTOR
           /*
+          const [feed, posts] = getFeedAndPosts(data.contents);
             const parser = new DOMParser();
             const feed = parser.parseFromString(data, 'application/xml').querySelector('rss');
 
