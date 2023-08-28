@@ -1,11 +1,13 @@
 /* eslint-disable no-param-reassign */
 import * as yup from 'yup';
 import onChange from 'on-change';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import _ from 'lodash';
 import i18next from '../i18n.js';
 import fetchXMLContent from '../utils/fetch.js';
-// import parser from './parser.js';
-// пробуем завести
-// import getFeedAndPostsParsed from '../utils/parser.js';
+// пробуем завести нужно обновлять посты
+import getFeedAndPostsParsed from '../utils/parser.js';
+// TO DO TOMORROW
 // import updatePosts from '../utils/updater.js';
 
 const handleValid = (elements, validationState) => {
@@ -73,14 +75,21 @@ const renderPosts = (elements, posts) => {
     ulEl.classList.add('list-group', 'border-0', 'rounded-0');
     card.append(ulEl);
   }
-  const liEl = document.createElement('li');
-  liEl.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
-  const link = document.createElement('a');
-  link.classList.add('fw-bold');
-  link.setAttribute('href', posts.link);
-  link.textContent = posts.title;
-  elements.postsContainer.querySelector('ul').append(liEl);
-  liEl.append(link);
+
+  const ulEl = elements.postsContainer.querySelector('ul');
+
+  posts.forEach((post) => {
+    const liEl = document.createElement('li');
+    liEl.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
+
+    const link = document.createElement('a');
+    link.classList.add('fw-bold');
+    link.setAttribute('href', post.link);
+    link.textContent = post.title;
+
+    liEl.append(link);
+    ulEl.appendChild(liEl);
+  });
 };
 
 export default () => {
@@ -135,7 +144,6 @@ export default () => {
     // валидируем
     try {
       await schema.validate(url);
-
       // проверим дубликаты в списке
       // TO DO доделать отправку - по submit все равно отправляет
       if (watchedState.url.includes(url)) {
@@ -148,45 +156,17 @@ export default () => {
       }
 
       const xmlContent = fetchXMLContent(url);
-      console.log('xmlContent>>>>>', xmlContent);
-      // updatePosts
+      // fetched content- fulfilled -> needs to be parsed
       xmlContent
         .then(({ data }) => {
-          const response = new DOMParser();
-          const xmlDocument = response.parseFromString(data.contents, 'application/xml');
-          if (!xmlDocument.querySelector('channel')) {
-            watchedState.isValid = false;
-            watchedState.error = 'notValidRSS';
-          }
-          // # TO DO REFACTOR
-          /*
-          const [feed, posts] = getFeedAndPosts(data.contents);
-            const parser = new DOMParser();
-            const feed = parser.parseFromString(data, 'application/xml').querySelector('rss');
-
-            if (!feed) {
-              console.log('Parser Error!');
-              throw new Error('notRSS');
-              }
-              */
-          const feed = {
-            id: watchedState.feeds.length + 1,
-            title: xmlDocument.querySelector('title').textContent,
-            description: xmlDocument.querySelector('description').textContent,
-          };
-          watchedState.feeds.push(feed);
-
-          const items = xmlDocument.querySelectorAll('item');
-          items.forEach((item) => {
-            const post = {
-              id: feed.id,
-              title: item.querySelector('title').textContent,
-              link: item.querySelector('link').nextSibling.textContent,
-            };
-            watchedState.posts.push(post);
-          });
-
-          watchedState.status = 'parsing';
+          const [feed, posts] = getFeedAndPostsParsed(data.contents);
+          const newFeed = { ...feed, id: _.uniqueId(), url };
+          const newPosts = posts.map((post) => ({ ...post, id: _.uniqueId(), feedId: newFeed.id }));
+          watchedState.feeds.push(newFeed);
+          // ATTENTION! REFACTOR THIS SHIT
+          // PLEASE :)
+          watchedState.posts.push(newPosts);
+          watchedState.status = 'success';
         })
         .catch((error) => {
           console.error('Error:', error);

@@ -1,33 +1,25 @@
-const parse = (data) => {
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(data, 'application/xml');
-  console.log(xmlDoc);
-
-  const title = xmlDoc.querySelector('channel > title').textContent.trim();
-  const description = xmlDoc.querySelector('channel > description').textContent.trim();
-  const items = xmlDoc.querySelectorAll('item');
-
-  const posts = Array
-    .from(items)
-    .reduce((acc, item) => {
-      const titlePost = item.querySelector('title').textContent.trim();
-      const descriptionPost = item.querySelector('description').textContent.trim();
-      const url = item.querySelector('link').textContent.trim();
-
-      const post = { title: titlePost, description: descriptionPost, url };
-      return [...acc, post];
-    }, []);
-
-  const feed = { title, description };
-  return { feed, posts };
-};
-
-export default (res) => {
-  const { contents } = res.data;
-  try {
-    return parse(contents);
-  } catch (err) {
-    err.name = 'notValidRSS';
-    throw err;
+export default (data) => {
+  const parsedXml = new DOMParser().parseFromString(data, 'application/xml');
+  const parseError = parsedXml.querySelector('parsererror');
+  if (parseError) {
+    const textError = parseError.textContent;
+    const error = new Error(textError);
+    error.NotValidRss = true;
+    throw error;
   }
+
+  const feed = {
+    title: parsedXml.querySelector('channel title').textContent,
+    description: parsedXml.querySelector('channel description').textContent,
+  };
+
+  const posts = Array.from(parsedXml.querySelectorAll('item'))
+    .map((item) => (
+      {
+        title: item.querySelector('title').textContent,
+        description: item.querySelector('description').textContent,
+        link: item.querySelector('link').textContent,
+      }
+    ));
+  return [feed, posts];
 };
