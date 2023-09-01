@@ -3,9 +3,7 @@
 import _ from 'lodash';
 import fetchData from './fetch.js';
 import getFeedAndPosts from './parser.js';
-// попробуем обновлять ленту постов
-// # TO DO
-// - [ ] Проверяет -> 5 секунд проверяет каждый RSS-поток
+
 const updatePosts = (watchedState) => {
   const { feeds, posts } = watchedState;
   const promises = feeds.map(({ url, id }) => fetchData(url)

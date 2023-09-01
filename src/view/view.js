@@ -5,10 +5,14 @@ import onChange from 'on-change';
 import _ from 'lodash';
 import i18next from '../i18n.js';
 import fetchXMLContent from '../utils/fetch.js';
-// пробуем завести нужно обновлять посты
 import getFeedAndPostsParsed from '../utils/parser.js';
+import updatePosts from '../utils/updater.js';
+import renderStatus from './renderStatus.js';
+// import renderPosts from './renderPosts';
 // TO DO TOMORROW
-// import updatePosts from '../utils/updater.js';
+// REFACTOR
+import renderModal from './renderModal.js';
+import renderVisitedLinks from './renderVisitedLinks.js';
 
 const handleValid = (elements, validationState) => {
   if (validationState) {
@@ -59,6 +63,18 @@ const renderFeeds = (elements, feed) => {
   liEl.append(pEl);
 };
 
+// Modal Window
+const makeModalButton = (post) => {
+  const button = document.createElement('button');
+  button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+  button.setAttribute('type', 'button');
+  button.setAttribute('data-bs-toggle', 'modal');
+  button.setAttribute('data-bs-target', '#modal');
+  button.setAttribute('data-id', post.id);
+  button.textContent = 'Просмотр';
+  return button;
+};
+
 const renderPosts = (elements, posts) => {
   if (!elements.postsContainer.querySelector('.card')) {
     const card = document.createElement('div');
@@ -86,26 +102,45 @@ const renderPosts = (elements, posts) => {
     link.classList.add('fw-bold');
     link.setAttribute('href', post.link);
     link.textContent = post.title;
-
+    // button to activate modal
+    // Create a button to activate the modal
+    const button = makeModalButton(post);
+    // Add a click event listener to the button to display the modal
+    /* button.addEventListener('click', () => {
+      displayModal(post.title, post.description); // You need to implement this function
+    });
+    */
     liEl.append(link);
+    liEl.append(button);
     ulEl.appendChild(liEl);
   });
 };
 
 export default () => {
-  const state = {
+  const initialState = {
     url: [],
     isValid: null,
     error: '',
     status: 'none',
     feeds: [],
     posts: [],
+    modalWindowId: null,
+    visitedLinksIds: new Set(),
   };
 
   const render = (elements) => (path, value) => {
     console.log(path);
     console.log(value);
     switch (path) {
+      case 'status':
+        renderStatus(elements, value);
+        break;
+      case 'modalWindowId':
+        renderModal(elements, initialState.posts, value);
+        break;
+      case 'visitedLinksIds':
+        renderVisitedLinks(value, initialState.posts);
+        break;
       case 'isValid':
         handleValid(elements, value);
         break;
@@ -129,9 +164,12 @@ export default () => {
     inputForm: document.querySelector('.rss-form'),
     inputField: document.querySelector('#url-input'),
     feedBack: document.querySelector('.feedback'),
+    modal: document.querySelector('#modal'),
+    spanSpinner: document.createElement('span'),
+    spanLoading: document.createElement('span'),
   };
 
-  const watchedState = onChange(state, render(elements));
+  const watchedState = onChange(initialState, render(elements));
 
   const schema = yup.string().required()
     .url('invalidUrl')
@@ -156,7 +194,6 @@ export default () => {
       }
 
       const xmlContent = fetchXMLContent(url);
-      // fetched content- fulfilled -> needs to be parsed
       xmlContent
         .then(({ data }) => {
           const [feed, posts] = getFeedAndPostsParsed(data.contents);
@@ -176,4 +213,6 @@ export default () => {
       watchedState.error = error.message;
     }
   });
+
+  setTimeout(() => updatePosts(watchedState), 5000);
 };
