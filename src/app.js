@@ -16,7 +16,11 @@ export default () => {
     feedbackContainer: document.querySelector('.feedback'),
     postsContainer: document.querySelector('.posts'),
     feedsContainer: document.querySelector('.feeds'),
-    modal: document.querySelector('#modal'),
+    modal: {
+      title: document.querySelector('.modal-title'),
+      body: document.querySelector('.modal-body'),
+      footer: document.querySelector('.modal-footer'),
+    },
     spanSpinner: document.createElement('span'),
     spanLoading: document.createElement('span'),
   };
