@@ -1,218 +1,172 @@
 /* eslint-disable no-param-reassign */
-import * as yup from 'yup';
 import onChange from 'on-change';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import _ from 'lodash';
-import i18next from '../i18n.js';
-import fetchXMLContent from '../utils/fetch.js';
-import getFeedAndPostsParsed from '../utils/parser.js';
-import updatePosts from '../utils/updater.js';
-import renderStatus from './renderStatus.js';
-// import renderPosts from './renderPosts';
-// TO DO TOMORROW
-// REFACTOR
-import renderModal from './renderModal.js';
-import renderVisitedLinks from './renderVisitedLinks.js';
 
-const handleValid = (elements, validationState) => {
-  if (validationState) {
-    elements.feedBack.textContent = i18next.t('success');
-    elements.feedBack.classList.replace('text-danger', 'text-success');
-    elements.inputField.classList.remove('is-invalid');
-    elements.inputField.focus();
-    elements.inputField.value = '';
-  }
+const renderFeeds = (state, elements, i18n) => {
+  elements.feedsContainer.innerHTML = '';
+
+  const divEl = document.createElement('div');
+  divEl.classList.add('card', 'border-0');
+  elements.feedsContainer.append(divEl);
+
+  const divTitleEl = document.createElement('div');
+  divTitleEl.classList.add('card-body');
+  divEl.append(divTitleEl);
+
+  const h2El = document.createElement('h2');
+  h2El.classList.add('card-title', 'h4');
+  h2El.textContent = i18n.t('feeds.title');
+  divTitleEl.append(h2El);
+
+  const ulEl = document.createElement('ul');
+  ulEl.classList.add('list-group', 'border-0', 'rounded-0');
+
+  state.feeds.forEach((feed) => {
+    const liEl = document.createElement('li');
+    liEl.classList.add('list-group-item', 'border-0', 'border-end-0');
+
+    const h3El = document.createElement('h3');
+    h3El.classList.add('h6', 'm-0');
+    h3El.textContent = feed.title;
+    liEl.append(h3El);
+
+    const pEl = document.createElement('p');
+    pEl.classList.add('m-0', 'small', 'text-black-50');
+    pEl.textContent = feed.description;
+    liEl.append(pEl);
+
+    ulEl.prepend(liEl);
+  });
+
+  divEl.append(ulEl);
 };
 
-const handleError = (elements, errorState) => {
-  if (errorState.length > 0) {
-    elements.feedBack.textContent = i18next.t(errorState);
-    elements.feedBack.classList.replace('text-success', 'text-danger');
-    elements.inputField.classList.add('is-invalid');
-  }
-};
+const renderPosts = (state, elements, i18n) => {
+  elements.postsContainer.innerHTML = '';
+  const divEl = document.createElement('div');
+  divEl.classList.add('card', 'border-0');
+  elements.postsContainer.prepend(divEl);
 
-const renderFeeds = (elements, feed) => {
-  if (!elements.feedsContainer.querySelector('.card')) {
-    const card = document.createElement('div');
-    card.classList.add('card', 'border-0');
-    elements.feedsContainer.append(card);
-    const cardBody = document.createElement('div');
-    cardBody.classList.add('card-body');
-    card.append(cardBody);
-    const h2El = document.createElement('h2');
-    h2El.classList.add('card-title', 'h4');
-    h2El.textContent = 'Фиды';
-    cardBody.append(h2El);
-    const ulEl = document.createElement('ul');
-    ulEl.classList.add('list-group', 'border-0', 'rounded-0');
-    card.append(ulEl);
-  }
-  const { title } = feed;
-  const { description } = feed;
-  const liEl = document.createElement('li');
-  liEl.classList.add('list-group-item', 'border-0', 'border-end-0');
-  elements.feedsContainer.querySelector('ul').prepend(liEl);
-  const hEl = document.createElement('h3');
-  hEl.classList.add('h6', 'm-0');
-  hEl.textContent = title;
-  const pEl = document.createElement('p');
-  pEl.classList.add('m-0', 'small', 'text-black-50');
-  pEl.textContent = description;
-  liEl.append(hEl);
-  liEl.append(pEl);
-};
+  const divTitleEl = document.createElement('div');
+  divTitleEl.classList.add('card-body');
+  divEl.append(divTitleEl);
 
-// Modal Window
-const makeModalButton = (post) => {
-  const button = document.createElement('button');
-  button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-  button.setAttribute('type', 'button');
-  button.setAttribute('data-bs-toggle', 'modal');
-  button.setAttribute('data-bs-target', '#modal');
-  button.setAttribute('data-id', post.id);
-  button.textContent = 'Просмотр';
-  return button;
-};
+  const h2El = document.createElement('h2');
+  h2El.classList.add('card-title', 'h4');
+  h2El.textContent = i18n.t('posts.title');
+  divTitleEl.prepend(h2El);
 
-const renderPosts = (elements, posts) => {
-  if (!elements.postsContainer.querySelector('.card')) {
-    const card = document.createElement('div');
-    card.classList.add('card', 'border-0');
-    elements.postsContainer.append(card);
-    const cardBody = document.createElement('div');
-    cardBody.classList.add('card-body');
-    card.append(cardBody);
-    const h2El = document.createElement('h2');
-    h2El.classList.add('card-title', 'h4');
-    h2El.textContent = 'Посты';
-    cardBody.append(h2El);
-    const ulEl = document.createElement('ul');
-    ulEl.classList.add('list-group', 'border-0', 'rounded-0');
-    card.append(ulEl);
-  }
-
-  const ulEl = elements.postsContainer.querySelector('ul');
-
-  posts.forEach((post) => {
+  const ulEl = document.createElement('ul');
+  ulEl.classList.add('list-group', 'border-0', 'rounded-0');
+  state.posts.forEach(({ id, title, link }) => {
+    const classes = state.uiState.visitedPosts.has(id) ? 'fw-normal link-secondary' : 'fw-bold';
     const liEl = document.createElement('li');
     liEl.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
 
-    const link = document.createElement('a');
-    link.classList.add('fw-bold');
-    link.setAttribute('href', post.link);
-    link.textContent = post.title;
-    // button to activate modal
-    // Create a button to activate the modal
-    const button = makeModalButton(post);
-    // Add a click event listener to the button to display the modal
-    /* button.addEventListener('click', () => {
-      displayModal(post.title, post.description); // You need to implement this function
-    });
-    */
-    liEl.append(link);
-    liEl.append(button);
-    ulEl.appendChild(liEl);
+    const aEl = document.createElement('a');
+    aEl.setAttribute('class', classes);
+    aEl.setAttribute('href', link);
+    aEl.dataset.id = id;
+    aEl.setAttribute('target', '_blank');
+    aEl.setAttribute('rel', 'noopener noreferrer');
+    aEl.textContent = title;
+    liEl.append(aEl);
+
+    const buttonEl = document.createElement('button');
+    buttonEl.setAttribute('type', 'button');
+    buttonEl.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+    buttonEl.dataset.id = id;
+    buttonEl.dataset.bsToggle = 'modal';
+    buttonEl.dataset.bsTarget = '#modal';
+    buttonEl.textContent = i18n.t('posts.button');
+    liEl.append(buttonEl);
+
+    ulEl.append(liEl);
   });
+  divEl.append(ulEl);
 };
 
-export default () => {
-  const initialState = {
-    url: [],
-    isValid: null,
-    error: '',
-    status: 'none',
-    feeds: [],
-    posts: [],
-    modalWindowId: null,
-    visitedLinksIds: new Set(),
-  };
+const renderError = (error, elements, i18n) => {
+  elements.feedbackContainer.textContent = '';
+  if (error) {
+    elements.input.readOnly = false;
+    elements.button.disabled = false;
+    elements.button.innerHTML = '';
+    elements.button.textContent = 'Добавить';
+    elements.feedbackContainer.classList.remove('text-success');
+    elements.feedbackContainer.classList.add('text-danger');
+    elements.feedbackContainer.textContent = i18n.t(error);
+  }
+};
 
-  const render = (elements) => (path, value) => {
-    console.log(path);
-    console.log(value);
-    switch (path) {
-      case 'status':
-        renderStatus(elements, value);
-        break;
-      case 'modalWindowId':
-        renderModal(elements, initialState.posts, value);
-        break;
-      case 'visitedLinksIds':
-        renderVisitedLinks(value, initialState.posts);
-        break;
-      case 'isValid':
-        handleValid(elements, value);
-        break;
-      case 'error':
-        handleError(elements, value);
-        break;
-      case 'feeds':
-        renderFeeds(elements, value[value.length - 1]);
-        break;
-      case 'posts':
-        renderPosts(elements, value[value.length - 1]);
-      // eslint-disable-next-line no-fallthrough
-      default:
-        break;
-    }
-  };
+const renderModal = (state, postId, elements) => {
+  const post = state.posts.find((item) => item.id === postId);
+  elements.modal.querySelector('.modal-title').textContent = post.title;
+  elements.modal.querySelector('.modal-body').textContent = post.description;
+  elements.modal.querySelector('a.btn').href = post.link;
+};
 
-  const elements = {
-    postsContainer: document.querySelector('.posts'),
-    feedsContainer: document.querySelector('.feeds'),
-    inputForm: document.querySelector('.rss-form'),
-    inputField: document.querySelector('#url-input'),
-    feedBack: document.querySelector('.feedback'),
-    modal: document.querySelector('#modal'),
-    spanSpinner: document.createElement('span'),
-    spanLoading: document.createElement('span'),
-  };
+const handleProcessState = (processState, elements, i18n) => {
+  switch (processState) {
+    case 'filling':
+      elements.input.readOnly = false;
+      elements.button.disabled = false;
+      break;
+    case 'processing':
+      elements.input.readOnly = true;
+      elements.button.disabled = true;
+      elements.button.innerHTML = '';
+      elements.spanSpinner.classList.add('spinner-border', 'spinner-border-sm');
+      elements.spanSpinner.setAttribute('role', 'status');
+      elements.spanSpinner.setAttribute('aria-hidden', 'true');
+      elements.button.append(elements.spanSpinner);
+      elements.spanLoading.classList.add('sr-only');
+      elements.spanLoading.textContent = '  Загрузка...';
+      elements.button.append(elements.spanLoading);
+      break;
+    case 'success':
+      elements.input.readOnly = false;
+      elements.button.disabled = false;
+      elements.button.innerHTML = '';
+      elements.button.textContent = 'Добавить';
+      elements.form.reset();
+      elements.form.focus();
+      elements.feedbackContainer.classList.remove('text-danger');
+      elements.feedbackContainer.classList.add('text-success');
+      elements.feedbackContainer.textContent = i18n.t('form.success');
+      break;
+    default:
+      throw new Error(`Unknown process state: ${processState}`);
+  }
+};
 
-  const watchedState = onChange(initialState, render(elements));
-
-  const schema = yup.string().required()
-    .url('invalidUrl')
-    .notOneOf([watchedState.url], 'existingUrl');
-
-  elements.inputForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const formData = new FormData(event.target);
-    const url = formData.get('url');
-    // валидируем
-    try {
-      await schema.validate(url);
-      // проверим дубликаты в списке
-      // TO DO доделать отправку - по submit все равно отправляет
-      if (watchedState.url.includes(url)) {
-        watchedState.isValid = false;
-        watchedState.error = i18next.t('existingUrl');
-      } else {
-        watchedState.isValid = true;
-        watchedState.url.push(url);
-        watchedState.error = '';
+export default (state, elements, i18n) => onChange(state, (path, value) => {
+  switch (path) {
+    case 'uiState.modalId':
+      renderModal(state, value, elements);
+      break;
+    case 'uiState.visitedPosts':
+      renderPosts(state, elements, i18n);
+      break;
+    case 'feeds':
+      renderFeeds(state, elements, i18n);
+      break;
+    case 'posts':
+      renderPosts(state, elements, i18n);
+      break;
+    case 'rssForm.error':
+      renderError(value, elements, i18n);
+      break;
+    case 'rssForm.valid':
+      if (!value) {
+        elements.input.classList.add('is-invalid');
+        return;
       }
-
-      const xmlContent = fetchXMLContent(url);
-      xmlContent
-        .then(({ data }) => {
-          const [feed, posts] = getFeedAndPostsParsed(data.contents);
-          const newFeed = { ...feed, id: _.uniqueId(), url };
-          const newPosts = posts.map((post) => ({ ...post, id: _.uniqueId(), feedId: newFeed.id }));
-          watchedState.feeds.push(newFeed);
-          // ATTENTION! REFACTOR THIS SHIT
-          // PLEASE :)
-          watchedState.posts.push(newPosts);
-          watchedState.status = 'success';
-        })
-        .catch((error) => {
-          console.error('Error:', error);
-        });
-    } catch (error) {
-      watchedState.isValid = false;
-      watchedState.error = error.message;
-    }
-  });
-
-  setTimeout(() => updatePosts(watchedState), 5000);
-};
+      elements.input.classList.remove('is-invalid');
+      break;
+    case 'rssForm.state':
+      handleProcessState(value, elements, i18n);
+      break;
+    default:
+      throw new Error(`Unknown path: ${path}`);
+  }
+});
